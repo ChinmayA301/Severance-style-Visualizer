@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════
+   LUMON INDUSTRIES — DESIGN TOKENS
+   Severance-inspired clinical palette
+   ══════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Core Palette ── */
+  --color-lumon-white: #ffffff;
+  --color-lumon-offwhite: #f5f5f3;
+  --color-lumon-cream: #eae8e3;
+  --color-lumon-gray-100: #d1d5db;
+  --color-lumon-gray-200: #9ca3af;
+  --color-lumon-gray-300: #6b7280;
+  --color-lumon-gray-400: #374151;
+  --color-lumon-black: #0a0a0a;
+
+  /* ── Accent: Lumon Institutional ── */
+  --color-lumon-blue: #1a3a5c;
+  --color-lumon-blue-light: #2c5282;
+  --color-lumon-green: #33ff00;
+  --color-lumon-green-dim: #1a8c00;
+  --color-lumon-green-glow: rgba(51, 255, 0, 0.15);
+  --color-lumon-red: #dc2626;
+
+  /* ── Typography ── */
+  --font-lumon: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* ── Spacing scale ── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-2xl: 64px;
+  --spacing-3xl: 96px;
+
+  /* ── Shadows ── */
+  --shadow-panel: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-panel-hover: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+  --shadow-deep: 0 4px 16px rgba(0,0,0,0.12), 0 12px 40px rgba(0,0,0,0.08);
+}
+
+/* ── Base Styles ── */
+@layer base {
+  html {
+    font-family: var(--font-lumon);
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    background-color: var(--color-lumon-offwhite);
+    color: var(--color-lumon-black);
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Clinical monospace for data fields */
+  code, .mono {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    letter-spacing: 0.04em;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: var(--color-lumon-blue);
+    color: var(--color-lumon-white);
+  }
+}
+
+/* ── Scrollbar: Clinical ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-lumon-offwhite);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-lumon-gray-200);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-lumon-gray-300);
+}
+
+/* ── Utility: CRT Scanline effect ── */
+.crt-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.015) 0px,
+    rgba(0, 0, 0, 0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* ── Utility: Lumon grid lines ── */
+.lumon-grid {
+  background-image:
+    linear-gradient(var(--color-lumon-cream) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-lumon-cream) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* ── Keyframes ── */
+@keyframes pulse-green {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes data-stream {
+  0% { transform: translateY(-100vh); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* ── Retro IDE Styling ── */
+.retro-ide-scanline {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.retro-ide-glow {
+  text-shadow: 0 0 4px rgba(51, 255, 0, 0.9), 0 0 12px rgba(51, 255, 0, 0.4);
+  color: #33ff00 !important;
+}
+
+.retro-ide-panel {
+  background-color: #030803;
+  border: 1px solid var(--color-lumon-gray-400);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.9);
+}
+
+/* ── 3D Isometric Utilities ── */
+.iso-container {
+  /* Rotates the grid on the X axis, then spins it on Z */
+  transform: rotateX(60deg) rotateZ(-45deg);
+  transform-style: preserve-3d;
+  /* Add perspective to give it depth if desired, though true iso doesn't use it, 
+     a slight perspective helps realism */
+  perspective: 2000px;
+}
+
+.iso-box-base {
+  transform-style: preserve-3d;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+/* Base floor of the bullpen */
+.iso-floor {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-lumon-white);
+  border: 1px solid var(--color-lumon-gray-100);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+}
+
+/* Left Wall (YZ Plane) */
+.iso-wall-left {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px; /* wall thickness/height */
+  background: #e2e2e0;
+  transform-origin: left;
+  transform: rotateY(-90deg);
+}
+
+/* Top Wall (XZ Plane) */
+.iso-wall-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 12px;
+  background: #fdfdfc;
+  transform-origin: top;
+  transform: rotateX(90deg);
+}
+
+/* Worker animation helpers */
+@keyframes walk-cycle {
+  0%, 100% { transform: translateY(0) scale(1.1); }
+  50% { transform: translateY(-3px) scale(0.9); }
+}
+.worker-bob {
+  animation: walk-cycle 0.4s infinite alternate ease-in-out;
+}
+
