@@ -2,7 +2,7 @@
 
 *A high-fidelity, interactive 3D isometric bullpen visualizer inspired by 'Severance'.*
 
-![LinkedIn Demo](/media/demo_video.webp)
+
 
 ## Overview
 
