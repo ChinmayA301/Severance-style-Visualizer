@@ -4,6 +4,7 @@ import { X, ArrowRight, TrendingUp, TrendingDown, Minus, Shield, Zap, MessageSqu
 import { Segment } from '../types';
 import { useAppState } from '../context/AppContext';
 import segments from '../data/segments';
+import RetroSlider from './RetroSlider';
 
 interface SegmentDetailProps {
   segmentId: string;
@@ -42,6 +43,61 @@ export default function SegmentDetail({ segmentId, onClose, onCompare }: Segment
       segment: segments.find((s) => s.id === sim.id),
     }))
     .filter((s) => s.segment);
+
+  const [overrides, setOverrides] = React.useState({
+    funding: 50,
+    outreach: 50,
+    subsidy: 50
+  });
+
+  // Reset overrides when segment changes
+  React.useEffect(() => {
+    setOverrides({ funding: 50, outreach: 50, subsidy: 50 });
+  }, [segmentId]);
+
+  // Calculate generic scenario impact multiplier (50 is neutral, 0-100 scales it down/up)
+  const masterMultiplier = 1 + ((overrides.funding - 50) * 0.005) + ((overrides.outreach - 50) * 0.003) + ((overrides.subsidy - 50) * 0.002);
+  
+  const projectedPopulation = Math.round(segment.populationSize * masterMultiplier);
+  const projectedPercent = (segment.populationPercent * masterMultiplier).toFixed(1);
+
+  const processMetric = (m: any, multiplier: number) => {
+    if (typeof m.value === 'number') {
+      const modValue = Math.round(m.value * multiplier);
+      const newTrend = modValue > m.value ? 'up' : (modValue < m.value ? 'down' : 'neutral');
+      return { ...m, value: modValue, trend: newTrend };
+    }
+    
+    // Parse strings like "$18.40" or "4.2 days"
+    const strVal = String(m.value);
+    const numMatch = strVal.match(/^([^0-9.-]*)([0-9.,]+)([^0-9.]*)$/);
+    if (numMatch) {
+      const prefix = numMatch[1];
+      const numRaw = numMatch[2].replace(/,/g, '');
+      const suffix = numMatch[3];
+      const parsed = parseFloat(numRaw);
+      
+      if (!isNaN(parsed)) {
+        // If it's a metric indicating "days" or "cost", higher override (more resources) typically lowers it!
+        // A simple heuristic: if it contains 'days', 'time', 'cost', invert the multiplier effect
+        const isInverselyCorrelated = m.label.toLowerCase().match(/(time|duration|cost|barrier|abandonment|violations)/);
+        const actualMultiplier = isInverselyCorrelated ? (1 - (multiplier - 1)) : multiplier;
+        
+        let modValue = parsed * actualMultiplier;
+        // prevent negative times/costs
+        if (modValue < 0) modValue = 0; 
+        
+        const isDecimal = numRaw.includes('.');
+        const finalNumStr = isDecimal ? modValue.toFixed(1) : Math.round(modValue).toLocaleString();
+        
+        const newTrend = modValue > parsed ? 'up' : (modValue < parsed ? 'down' : 'neutral');
+        return { ...m, value: `${prefix}${finalNumStr}${suffix}`, trend: newTrend };
+      }
+    }
+    return m;
+  };
+
+  const modifiedMetrics = filteredMetrics.map(m => processMetric(m, masterMultiplier));
 
   return (
     <AnimatePresence>
@@ -123,11 +179,16 @@ export default function SegmentDetail({ segmentId, onClose, onCompare }: Segment
               </p>
               <div className="flex items-center gap-8 mt-8 border border-green-900/50 p-6 bg-green-950/20">
                 <div>
-                  <div className="text-[10px] tracking-[0.2em] uppercase mb-2 opacity-70">
-                    Population
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="text-[10px] tracking-[0.2em] uppercase opacity-70">
+                      Population
+                    </div>
+                    {masterMultiplier !== 1 && (
+                      <span className="text-[10px] text-green-400 font-bold tracking-widest">(MODIFIED)</span>
+                    )}
                   </div>
                   <div className="text-2xl font-bold retro-ide-glow">
-                    {segment.populationSize.toLocaleString()}
+                    {projectedPopulation.toLocaleString()}
                   </div>
                 </div>
                 <div className="w-px h-10 bg-green-900/50" />
@@ -136,7 +197,7 @@ export default function SegmentDetail({ segmentId, onClose, onCompare }: Segment
                     Share
                   </div>
                   <div className="text-2xl font-bold retro-ide-glow">
-                    {segment.populationPercent}%
+                    {projectedPercent}%
                   </div>
                 </div>
                 <div className="w-px h-10 bg-green-900/50" />
@@ -191,6 +252,26 @@ export default function SegmentDetail({ segmentId, onClose, onCompare }: Segment
               ))}
             </motion.div>
 
+            {/* Simulation Overrides */}
+            <motion.div
+              className="mb-12 relative z-10 p-6 bg-[#030603] border border-green-900/50"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
+            >
+              <h4 className="text-[14px] tracking-[0.2em] font-bold uppercase mb-6 retro-ide-glow">
+                # OVERRIDE_PROTOCOLS
+              </h4>
+              <RetroSlider label="FUNDING_ALLOCATION" value={overrides.funding} onChange={v => setOverrides(o => ({...o, funding: v}))} />
+              <RetroSlider label="OUTREACH_FREQUENCY" value={overrides.outreach} onChange={v => setOverrides(o => ({...o, outreach: v}))} />
+              <RetroSlider label="PROGRAM_SUBSIDY_LEVEL" value={overrides.subsidy} onChange={v => setOverrides(o => ({...o, subsidy: v}))} />
+              {masterMultiplier !== 1 && (
+                <div className="mt-4 text-[10px] text-green-500 tracking-[0.2em] animate-pulse">
+                  &gt; WARNING: SYSTEM METRICS FUNCTIONING UNDER MODIFIED PARAMETERS
+                </div>
+              )}
+            </motion.div>
+
             {/* Metrics */}
             <motion.div
               className="mb-12 relative z-10"
@@ -202,7 +283,7 @@ export default function SegmentDetail({ segmentId, onClose, onCompare }: Segment
                 $ MACRODATA_METRICS {viewMode === 'analyst' && '[-RAW_MODE]'}
               </h4>
               <div className="grid grid-cols-3 gap-px border border-green-900/50 bg-green-900/30">
-                {filteredMetrics.map((metric) => (
+                {modifiedMetrics.map((metric) => (
                   <div
                     key={metric.id}
                     className="p-5 flex flex-col justify-between"

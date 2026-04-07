@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppProvider, useAppState } from './context/AppContext';
 import Header from './components/Header';
@@ -8,12 +8,29 @@ import ComparisonView from './components/ComparisonView';
 import ComparisonSelector from './components/ComparisonSelector';
 import segments from './data/segments';
 import { ArrowLeftRight } from 'lucide-react';
+import SurveillanceEvent, { SURVEILLANCE_SUBJECTS } from './components/SurveillanceEvent';
 
 function AppContent() {
   const { selectedSegmentId, setSelectedSegmentId } = useAppState();
   const [showCompareSelector, setShowCompareSelector] = useState(false);
   const [comparePreselect, setComparePreselect] = useState<string | undefined>();
   const [comparisonIds, setComparisonIds] = useState<[string, string] | null>(null);
+  const [surveillanceSubject, setSurveillanceSubject] = useState<string | null>(null);
+
+  // Random Surveillance Timer
+  useEffect(() => {
+    if (surveillanceSubject) return; // Don't schedule while active
+
+    // Infrequent random triggers (between 45s and 180s)
+    const nextDelay = Math.floor(Math.random() * 135000) + 45000; 
+    
+    const timer = setTimeout(() => {
+      const randomSubject = SURVEILLANCE_SUBJECTS[Math.floor(Math.random() * SURVEILLANCE_SUBJECTS.length)];
+      setSurveillanceSubject(randomSubject);
+    }, nextDelay);
+
+    return () => clearTimeout(timer);
+  }, [surveillanceSubject]);
 
   const handleSegmentClick = (id: string) => {
     setSelectedSegmentId(id);
@@ -43,9 +60,20 @@ function AppContent() {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--color-lumon-offwhite)' }}>
+    <div className="flex flex-col h-full relative" style={{ backgroundColor: 'var(--color-lumon-offwhite)' }}>
+      {/* Secret trigger button - aesthetic empty black square */}
+      <button 
+        onClick={() => {
+          console.log("TRIGGER CLICKED!");
+          const randomSubject = SURVEILLANCE_SUBJECTS[Math.floor(Math.random() * SURVEILLANCE_SUBJECTS.length)];
+          setSurveillanceSubject(randomSubject);
+        }}
+        className="absolute top-0 right-0 w-4 h-4 bg-transparent z-[9999999] cursor-default"
+        title="Override"
+      />
+
       {/* CRT scanline overlay */}
-      <div className="crt-overlay" />
+      <div className="crt-overlay pointer-events-none z-50 mix-blend-overlay opacity-30" />
 
       <Header />
 
@@ -62,18 +90,20 @@ function AppContent() {
             {segments.length} Active Segments — {segments.reduce((a, s) => a + s.populationSize, 0).toLocaleString()} Total Population
           </span>
         </div>
-        <button
-          onClick={handleOpenCompareSelector}
-          className="flex items-center gap-2 px-3 py-1.5 border transition-all duration-300 cursor-pointer"
-          style={{
-            borderColor: 'var(--color-lumon-gray-100)',
-            color: 'var(--color-lumon-gray-300)',
-            backgroundColor: 'transparent',
-          }}
-        >
-          <ArrowLeftRight size={12} />
-          <span className="text-[10px] tracking-[0.15em] uppercase">Compare</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleOpenCompareSelector}
+            className="flex items-center gap-2 px-3 py-1.5 border transition-all duration-300 cursor-pointer hover:bg-gray-100"
+            style={{
+              borderColor: 'var(--color-lumon-gray-100)',
+              color: 'var(--color-lumon-gray-300)',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <ArrowLeftRight size={12} />
+            <span className="text-[10px] tracking-[0.15em] uppercase">Compare</span>
+          </button>
+        </div>
       </div>
 
       {/* Main content: Bullpen Grid */}
@@ -112,6 +142,14 @@ function AppContent() {
           />
         )}
       </AnimatePresence>
+
+      {/* Surveillance Event */}
+      {surveillanceSubject && (
+        <SurveillanceEvent 
+          subject={surveillanceSubject} 
+          onComplete={() => setSurveillanceSubject(null)} 
+        />
+      )}
     </div>
   );
 }
